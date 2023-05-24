@@ -3,5 +3,8 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"rust-analyzer.imports.merge.glob": false
+	}
 }

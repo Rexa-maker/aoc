@@ -1,10 +1,7 @@
-use std::env;
-use utils;
+use utils::Input;
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    println!("{}", utils::open(&args[1]).solve(solver));
+    println!("{}", Input::new(include_str!("input")).solve(solver));
 }
 
 fn solver(input: &str) -> String {
