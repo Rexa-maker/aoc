@@ -1,7 +1,5 @@
-use utils::Input;
-
 fn main() {
-    println!("{}", Input::new(include_str!("input")).solve(solver));
+    println!("{}", solver(include_str!("input")));
 }
 
 fn solver(input: &str) -> String {
