@@ -1,2 +1,2 @@
 # aoc
-Let's do as many as possible from adventofcode.com
+Let's do as many as possible from adventofcode.com in Rust
