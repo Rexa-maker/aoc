@@ -17,6 +17,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: cd 2015 && cargo build --verbose
+      run: |
+        for dir in $(find . -type d -name '[0-9]{4}' -exec echo {} \;); do
+          (cd "$dir" && cargo build --verbose);
+        done
     - name: Run tests
-      run: cd 2015 && cargo test --verbose
+      run: |
+        for dir in $(find . -type d -name '[0-9]{4}' -exec echo {} \;); do
+          (cd "$dir" && cargo test --verbose);
+        done
