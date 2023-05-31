@@ -17,12 +17,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: |
-        for dir in $(find . -type d -name '[0-9]{4}' -exec echo {} \;); do
-          (cd "$dir" && cargo build --verbose);
-        done
+      run: cd 2015 && cargo build --verbose
+    #- name: Run tests
+    #  run: cd 2015 && cargo test --verbose
+      
+      # lol phind.com
     - name: Run tests
       run: |
-        for dir in $(find . -type d -name '[0-9]{4}' -exec echo {} \;); do
+        find . -type d -regex '\./[0-9]\{4\}$' | while IFS= read -r dir; do
           (cd "$dir" && cargo test --verbose);
         done
