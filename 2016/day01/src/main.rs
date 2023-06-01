@@ -39,23 +39,41 @@ fn turn(rotation: char, facing: &mut Cardinal) {
 fn advance(
     facing: &Cardinal,
     distance: i32,
-    position: &mut (i32, i32),
+    position: (i32, i32),
     visited: &mut HashSet<(i32, i32)>,
 ) -> u32 {
     let mut distance_visited_twice = 0;
-    let mut movement: (&mut i32, i32);
-
-    match facing {
-        Cardinal::North => movement = (&mut position.0, 1),
-        Cardinal::East => movement = (&mut position.1, 1),
-        Cardinal::South => movement = (&mut position.0, -1),
-        Cardinal::West => movement = (&mut position.1, -1),
-    };
+    let mut position = position;
 
     for _ in 1..distance {
-        *movement.0 += movement.1;
-        if !visited.insert(*position) {
-            distance_visited_twice = manhattan_distance(position);
+        let position_axis: &mut i32;
+        let increment;
+
+        match facing {
+            Cardinal::North => {
+                position_axis = &mut position.0;
+                increment = 1;
+            }
+            Cardinal::East => {
+                position_axis = &mut position.1;
+                increment = 1;
+            }
+            Cardinal::South => {
+                position_axis = &mut position.0;
+                increment = -1;
+            }
+            Cardinal::West => {
+                position_axis = &mut position.1;
+                increment = -1;
+            }
+        };
+        *position_axis += increment;
+
+        if !visited.insert(position) {
+            let new_distance = manhattan_distance(&position);
+            if new_distance < distance_visited_twice || distance_visited_twice == 0 {
+                distance_visited_twice = new_distance;
+            }
         }
     }
     distance_visited_twice
@@ -80,7 +98,7 @@ fn how_many_blocks(input: &str) -> (u32, u32) {
         let rotation = chars.next().unwrap();
         let distance: u32 = chars.collect::<String>().parse().unwrap();
         turn(rotation, &mut facing);
-        let distance_visited_twice = advance(&facing, distance as i32, &mut position, &mut visited);
+        let distance_visited_twice = advance(&facing, distance as i32, position, &mut visited);
         if distance_visited_twice != 0 {
             result.0 = distance_visited_twice;
         }
