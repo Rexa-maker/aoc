@@ -96,9 +96,9 @@ fn how_many_blocks(input: &str) -> (u32, u32) {
 
 #[test]
 fn day01_examples() {
-    assert_eq!(how_many_blocks("R2, L3").1, 5);
-    assert_eq!(how_many_blocks("R2, R2, R2").1, 2);
-    assert_eq!(how_many_blocks("R5, L5, R5, R3").1, 12);
+    assert_eq!(how_many_blocks("R2, L3").0, 5);
+    assert_eq!(how_many_blocks("R2, R2, R2").0, 2);
+    assert_eq!(how_many_blocks("R5, L5, R5, R3").0, 12);
 
-    assert_eq!(how_many_blocks("R8, R4, R4, R8").0, 4);
+    assert_eq!(how_many_blocks("R8, R4, R4, R8").1, 4);
 }
