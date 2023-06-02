@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 
 fn main() {
-    println!("{:?}", how_many_blocks(include_str!("input")));
+    let answer = how_many_blocks(include_str!("input"));
+    println!("{} {}", answer.0, answer.1);
 }
 
 enum Cardinal {
@@ -41,42 +42,26 @@ fn advance(
     distance: i32,
     position: (i32, i32),
     visited: &mut HashSet<(i32, i32)>,
-) -> u32 {
+) -> (u32, (i32, i32)) {
     let mut distance_visited_twice = 0;
-    let mut position = position;
+    let mut new_position = position;
 
-    for _ in 1..distance {
-        let position_axis: &mut i32;
-        let increment;
-
+    for _ in 0..distance {
         match facing {
-            Cardinal::North => {
-                position_axis = &mut position.0;
-                increment = 1;
-            }
-            Cardinal::East => {
-                position_axis = &mut position.1;
-                increment = 1;
-            }
-            Cardinal::South => {
-                position_axis = &mut position.0;
-                increment = -1;
-            }
-            Cardinal::West => {
-                position_axis = &mut position.1;
-                increment = -1;
-            }
+            Cardinal::North => new_position.0 += 1,
+            Cardinal::East => new_position.1 += 1,
+            Cardinal::South => new_position.0 -= 1,
+            Cardinal::West => new_position.1 -= 1,
         };
-        *position_axis += increment;
 
-        if !visited.insert(position) {
-            let new_distance = manhattan_distance(&position);
+        if !visited.insert(new_position) {
+            let new_distance = manhattan_distance(&new_position);
             if new_distance < distance_visited_twice || distance_visited_twice == 0 {
                 distance_visited_twice = new_distance;
             }
         }
     }
-    distance_visited_twice
+    (distance_visited_twice, new_position)
 }
 
 fn manhattan_distance(position: &(i32, i32)) -> u32 {
@@ -98,14 +83,14 @@ fn how_many_blocks(input: &str) -> (u32, u32) {
         let rotation = chars.next().unwrap();
         let distance: u32 = chars.collect::<String>().parse().unwrap();
         turn(rotation, &mut facing);
-        let distance_visited_twice = advance(&facing, distance as i32, position, &mut visited);
-        if distance_visited_twice != 0 {
-            result.0 = distance_visited_twice;
+        let distance_visited_twice;
+        (distance_visited_twice, position) =
+            advance(&facing, distance as i32, position, &mut visited);
+        if distance_visited_twice != 0 && (result.1 == 0 || result.1 > distance_visited_twice) {
+            result.1 = distance_visited_twice;
         }
-
-        println!("{} {:?} {:?}", movement, position, visited);
     }
-    result.1 = manhattan_distance(&position);
+    result.0 = manhattan_distance(&position);
     result
 }
 
@@ -115,6 +100,5 @@ fn day01_examples() {
     assert_eq!(how_many_blocks("R2, R2, R2").1, 2);
     assert_eq!(how_many_blocks("R5, L5, R5, R3").1, 12);
 
-    println!("DEBUGAX");
     assert_eq!(how_many_blocks("R8, R4, R4, R8").0, 4);
 }
