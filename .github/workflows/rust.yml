@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
-      run: for dir in 2015 2016 2017 2018; do (echo "h1. $dir" && cd "$dir" && cargo build --verbose); done
+      run: for dir in 2015 2016 2017 2018 2019 2020 2021 2022; do (echo "h1. $dir" && cd "$dir" && cargo build --verbose); done
     - name: Run tests
-      run: for dir in 2015 2016 2017 2018; do (echo "h1. $dir" && cd "$dir" && cargo test --verbose); done
+      run: for dir in 2015 2016 2017 2018 2019 2020 2021 2022; do (echo "h1. $dir" && cd "$dir" && cargo test --verbose); done
