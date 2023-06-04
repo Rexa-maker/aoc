@@ -24,11 +24,12 @@ impl AdventCoin<'_> {
 
     fn mine(self) -> u32 {
         let mut answer = 0;
+        let zeroes = &str::repeat("0", self.zeroes as usize);
 
         loop {
             let to_hash = self.secret_key.to_string() + answer.to_string().as_str();
             let hash = format!("{:x}", md5::compute(to_hash.as_bytes()));
-            if hash.starts_with(&str::repeat("0", self.zeroes as usize)) {
+            if hash.starts_with(zeroes) {
                 break;
             }
             answer += 1;
