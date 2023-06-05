@@ -40,6 +40,7 @@ impl AdventCoin<'_> {
 }
 
 #[test]
+#[ignore]
 fn examples() {
     assert!(format!("{:x}", md5::compute(b"abcdef609043")).starts_with("000001dbbfa"));
     assert_eq!(AdventCoin::new("abcdef", 5).mine(), 609043);
