@@ -4,81 +4,88 @@ use regex::Regex;
 
 fn main() {
     let input = include_str!("input");
-    let mut lights = LightsMatrix::new();
+    let mut lights1 = LightsMatrix1::new();
+    let mut lights2 = LightsMatrix2::new();
     for line in input.lines() {
-        lights.instruction(line);
+        lights1.instruction(line);
+        lights2.instruction(line);
     }
-    println!("{} {}", lights.how_many_lit(), 0);
+    println!("{} {}", lights1.how_many_lit(), lights2.brightness());
 }
 
-struct LightsMatrix {
-    matrix: [[bool; 1000]; 1000],
+enum Action {
+    TurnOn,
+    TurnOff,
+    Toggle,
 }
 
-impl LightsMatrix {
-    fn new() -> LightsMatrix {
-        LightsMatrix {
-            matrix: [[false; 1000]; 1000],
+struct Instruction {
+    action: Action,
+    iterator: Vec<(usize, usize)>,
+}
+
+impl Instruction {
+    fn parse(line: &str) -> Instruction {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(
+                r"^(toggle|turn off|turn on) (\d{1,3}),(\d{1,3}) through (\d{1,3}),(\d{1,3})"
+            )
+            .unwrap();
         }
-    }
+        let binding = RE.captures(line).unwrap();
+        let mut mat = binding.iter();
 
-    fn instruction(self: &mut Self, input: &str) -> &Self {
-        enum Action {
-            TurnOn,
-            TurnOff,
-            Toggle,
-        }
-        struct Instruction {
-            action: Action,
-            bounds: ((usize, usize), (usize, usize)),
-        }
+        mat.next(); // First match is the whole line
 
-        impl Instruction {
-            fn parse(line: &str) -> Instruction {
-                lazy_static! {
-                    static ref RE: Regex = Regex::new(
-                        r"^(toggle|turn off|turn on) (\d{1,3}),(\d{1,3}) through (\d{1,3}),(\d{1,3})"
-                    )
-                    .unwrap();
-                }
-                let binding = RE.captures(line).unwrap();
-                let mut mat = binding.iter();
+        let instruction_str = mat.next().unwrap().unwrap().as_str();
+        let (x1, y1, x2, y2) = mat
+            .map(|x| x.unwrap().as_str().parse::<usize>().unwrap())
+            .collect_tuple()
+            .unwrap();
+        let action = match instruction_str {
+            "turn on" => Action::TurnOn,
+            "turn off" => Action::TurnOff,
+            "toggle" => Action::Toggle,
+            _ => panic!("Failed to parse instruction {line}"),
+        };
 
-                mat.next(); // First match is the whole line
-
-                let instruction_str = mat.next().unwrap().unwrap().as_str();
-                let (x1, y1, x2, y2) = mat
-                    .map(|x| x.unwrap().as_str().parse::<usize>().unwrap())
-                    .collect_tuple()
-                    .unwrap();
-                let action = match instruction_str {
-                    "turn on" => Action::TurnOn,
-                    "turn off" => Action::TurnOff,
-                    "toggle" => Action::Toggle,
-                    _ => panic!("Failed to parse instruction {line}"),
-                };
-                Instruction {
-                    action: action,
-                    bounds: ((x1, y1), (x2, y2)),
-                }
+        let mut v = Vec::new();
+        for x in x1..x2 + 1 {
+            for y in y1..y2 + 1 {
+                v.push((x, y));
             }
         }
 
-        for line in input.lines() {
-            let instruction = Instruction::parse(line);
-            for x in instruction.bounds.0 .0..instruction.bounds.1 .0 + 1 {
-                for y in instruction.bounds.0 .1..instruction.bounds.1 .1 + 1 {
-                    match instruction.action {
-                        Action::Toggle => {
-                            self.matrix[x][y] = !self.matrix[x][y];
-                        }
-                        Action::TurnOff => {
-                            self.matrix[x][y] = false;
-                        }
-                        Action::TurnOn => {
-                            self.matrix[x][y] = true;
-                        }
-                    }
+        Instruction {
+            action: action,
+            iterator: v,
+        }
+    }
+}
+
+struct LightsMatrix1 {
+    matrix: Vec<Vec<bool>>,
+}
+
+impl LightsMatrix1 {
+    fn new() -> Self {
+        Self {
+            matrix: vec![vec![false; 1000]; 1000],
+        }
+    }
+
+    fn instruction(self: &mut Self, line: &str) -> &Self {
+        let instruction = Instruction::parse(line);
+        for (x, y) in instruction.iterator.iter() {
+            match instruction.action {
+                Action::Toggle => {
+                    self.matrix[*x][*y] = !self.matrix[*x][*y];
+                }
+                Action::TurnOff => {
+                    self.matrix[*x][*y] = false;
+                }
+                Action::TurnOn => {
+                    self.matrix[*x][*y] = true;
                 }
             }
         }
@@ -95,25 +102,75 @@ impl LightsMatrix {
     }
 }
 
+struct LightsMatrix2 {
+    matrix: Vec<Vec<u32>>,
+}
+
+impl LightsMatrix2 {
+    fn new() -> Self {
+        Self {
+            matrix: vec![vec![0; 1000]; 1000],
+        }
+    }
+
+    fn instruction(self: &mut Self, line: &str) -> &Self {
+        let instruction = Instruction::parse(line);
+        for (x, y) in instruction.iterator.iter() {
+            match instruction.action {
+                Action::Toggle => {
+                    self.matrix[*x][*y] += 2;
+                }
+                Action::TurnOff => {
+                    if self.matrix[*x][*y] > 0 {
+                        self.matrix[*x][*y] -= 1;
+                    }
+                }
+                Action::TurnOn => {
+                    self.matrix[*x][*y] += 1;
+                }
+            }
+        }
+        self
+    }
+
+    fn brightness(self: &Self) -> u32 {
+        self.matrix.iter().fold(0, |tally_lines, line| {
+            tally_lines + line.iter().sum::<u32>()
+        })
+    }
+}
+
 #[test]
 fn examples() {
-    let mut lights = LightsMatrix::new();
+    let mut lights1 = LightsMatrix1::new();
     assert_eq!(
-        lights
+        lights1
             .instruction("turn on 0,0 through 999,999")
             .how_many_lit(),
         1000000
     );
     assert_eq!(
-        lights
+        lights1
             .instruction("toggle 0,0 through 999,0")
             .how_many_lit(),
         999000
     );
     assert_eq!(
-        lights
+        lights1
             .instruction("turn off 499,499 through 500,500")
             .how_many_lit(),
         998996
+    );
+
+    let mut lights2 = LightsMatrix2::new();
+    assert_eq!(
+        lights2.instruction("turn on 0,0 through 0,0").brightness(),
+        1
+    );
+    assert_eq!(
+        lights2
+            .instruction("toggle 0,0 through 999,999")
+            .brightness(),
+        2000001
     );
 }
