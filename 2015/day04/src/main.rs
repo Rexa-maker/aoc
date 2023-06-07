@@ -1,4 +1,5 @@
 use md5;
+use rayon::prelude::*;
 
 fn main() {
     let input = include_str!("input");
@@ -23,24 +24,20 @@ impl AdventCoin<'_> {
     }
 
     fn mine(self) -> u32 {
-        let mut answer = 0;
         let zeroes = &str::repeat("0", self.zeroes as usize);
 
-        loop {
-            let to_hash = self.secret_key.to_string() + answer.to_string().as_str();
-            let hash = format!("{:x}", md5::compute(to_hash.as_bytes()));
-            if hash.starts_with(zeroes) {
-                break;
-            }
-            answer += 1;
-        }
-
-        answer
+        (1..u32::max_value())
+            .into_par_iter()
+            .find_first(|&number| {
+                let to_hash = format!("{}{}", self.secret_key, number);
+                let hash = format!("{:x}", md5::compute(to_hash.as_bytes()));
+                hash.starts_with(zeroes)
+            })
+            .unwrap()
     }
 }
 
 #[test]
-#[ignore]
 fn examples() {
     assert!(format!("{:x}", md5::compute(b"abcdef609043")).starts_with("000001dbbfa"));
     assert_eq!(AdventCoin::new("abcdef", 5).mine(), 609043);
