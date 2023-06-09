@@ -1,13 +1,22 @@
 use std::collections::HashMap;
 
 fn main() {
+    let a = "a".to_string();
     let mut wires: HashMap<String, Operation> = HashMap::new();
     let input = include_str!("input");
     input
         .lines()
         .map(|line| Operation::parse(line, &mut wires))
         .for_each(drop);
-    println!("{} {}", resolve("a".to_string(), &mut wires), 0);
+    let mut wires2 = wires.clone();
+    let init_a = wires.get(&a).unwrap().clone();
+    let pass1 = resolve(&a, &mut wires);
+
+    wires2.insert("b".to_string(), Operation::INT(pass1));
+    wires2.insert(a.clone(), init_a);
+    let pass2 = resolve(&a, &mut wires2);
+
+    println!("{} {}", pass1, pass2);
 }
 
 #[derive(Clone)]
@@ -67,21 +76,21 @@ impl Operation {
     }
 }
 
-fn resolve(wire: String, wires: &mut HashMap<String, Operation>) -> u16 {
-    let operation = wires.get(&wire).unwrap().clone();
+fn resolve(wire: &String, wires: &mut HashMap<String, Operation>) -> u16 {
+    let operation = wires.get(wire).unwrap().clone();
 
     let value = match operation {
         Operation::INT(a) => a,
-        Operation::IS(wire) => resolve(wire, wires),
-        Operation::NOT(wire) => !resolve(wire, wires),
-        Operation::AND(left, right) => resolve(left, wires) & resolve(right, wires),
-        Operation::AND1(right) => 1 & resolve(right, wires),
-        Operation::OR(left, right) => resolve(left, wires) | resolve(right, wires),
-        Operation::LSHIFT(wire, shift) => resolve(wire, wires) << shift,
-        Operation::RSHIFT(wire, shift) => resolve(wire, wires) >> shift,
+        Operation::IS(wire) => resolve(&wire, wires),
+        Operation::NOT(wire) => !resolve(&wire, wires),
+        Operation::AND(left, right) => resolve(&left, wires) & resolve(&right, wires),
+        Operation::AND1(right) => 1 & resolve(&right, wires),
+        Operation::OR(left, right) => resolve(&left, wires) | resolve(&right, wires),
+        Operation::LSHIFT(wire, shift) => resolve(&wire, wires) << shift,
+        Operation::RSHIFT(wire, shift) => resolve(&wire, wires) >> shift,
     };
 
-    wires.insert(wire, Operation::INT(value));
+    wires.insert(wire.clone(), Operation::INT(value));
 
     value
 }
@@ -102,12 +111,12 @@ NOT y -> i";
         .map(|line| Operation::parse(line, &mut wires))
         .for_each(drop);
 
-    assert_eq!(resolve("d".to_string(), &mut wires), 72);
-    assert_eq!(resolve("e".to_string(), &mut wires), 507);
-    assert_eq!(resolve("f".to_string(), &mut wires), 492);
-    assert_eq!(resolve("g".to_string(), &mut wires), 114);
-    assert_eq!(resolve("h".to_string(), &mut wires), 65412);
-    assert_eq!(resolve("i".to_string(), &mut wires), 65079);
-    assert_eq!(resolve("x".to_string(), &mut wires), 123);
-    assert_eq!(resolve("y".to_string(), &mut wires), 456);
+    assert_eq!(resolve(&"d".to_string(), &mut wires), 72);
+    assert_eq!(resolve(&"e".to_string(), &mut wires), 507);
+    assert_eq!(resolve(&"f".to_string(), &mut wires), 492);
+    assert_eq!(resolve(&"g".to_string(), &mut wires), 114);
+    assert_eq!(resolve(&"h".to_string(), &mut wires), 65412);
+    assert_eq!(resolve(&"i".to_string(), &mut wires), 65079);
+    assert_eq!(resolve(&"x".to_string(), &mut wires), 123);
+    assert_eq!(resolve(&"y".to_string(), &mut wires), 456);
 }
