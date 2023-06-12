@@ -8,7 +8,7 @@ fn main() {
 }
 
 // ChatGPT
-fn tsp(graph: &HashMap<(String, String), usize>, current: &String, visited: &Vec<String>) -> usize {
+fn tsp(graph: &HashMap<(&str, &str), usize>, current: &str, visited: &Vec<&str>) -> usize {
     // Base case: all locations have been visited
     if visited.len() == graph.len() {
         return 0;
@@ -18,15 +18,15 @@ fn tsp(graph: &HashMap<(String, String), usize>, current: &String, visited: &Vec
     let mut shortest = std::usize::MAX;
     for ((a, b), distance) in graph
         .iter()
-        .filter(|((a, b), _)| a == current || b == current)
+        .filter(|((a, b), _)| *a == current || *b == current)
     {
-        let next = if a == current { b } else { a };
+        let next = if *a == current { *b } else { *a };
         if visited.contains(&next) {
             continue;
         }
 
         let mut new_visited = visited.clone();
-        new_visited.push(next.clone());
+        new_visited.push(next);
         let path_len = distance + tsp(graph, next, &new_visited);
         if path_len < shortest {
             shortest = path_len;
@@ -42,12 +42,12 @@ fn shortest_distance(input: &str) -> usize {
             Regex::new(r"(?P<source>\w+) to (?P<destination>\w+) = (?P<distance>\d+)").unwrap();
     }
 
-    let mut graph: HashMap<(String, String), usize> = HashMap::new();
-    let mut cities: HashSet<String> = HashSet::new();
+    let mut graph: HashMap<(&str, &str), usize> = HashMap::new();
+    let mut cities: HashSet<&str> = HashSet::new();
 
     for capture in RE.captures_iter(input) {
-        let src = capture.name("source").unwrap().as_str().to_string();
-        let dst = capture.name("destination").unwrap().as_str().to_string();
+        let src = capture.name("source").unwrap().as_str();
+        let dst = capture.name("destination").unwrap().as_str();
         let distance = capture
             .name("distance")
             .unwrap()
@@ -55,15 +55,15 @@ fn shortest_distance(input: &str) -> usize {
             .parse::<usize>()
             .unwrap();
 
-        graph.insert((src.clone(), dst.clone()), distance);
-        cities.insert(src);
-        cities.insert(dst);
+        cities.insert(&src);
+        cities.insert(&dst);
+        graph.insert((&src, &dst), distance);
     }
 
     let mut shortest = usize::MAX;
 
     for city in cities {
-        let visited = vec![city.clone()];
+        let visited = vec![city];
         let trip = tsp(&graph, &city, &visited);
         if trip < shortest {
             shortest = trip;
