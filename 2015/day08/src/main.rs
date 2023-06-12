@@ -1,6 +1,10 @@
 fn main() {
     let input = include_str!("input");
-    println!("{} {}", difference_code_ram(input), 0);
+    println!(
+        "{} {}",
+        difference_code_ram(input),
+        difference_new_code(input)
+    );
 }
 
 fn difference_code_ram(input: &str) -> usize {
@@ -42,6 +46,25 @@ fn line_difference_code_ram(line: &str) -> usize {
     total
 }
 
+fn difference_new_code(input: &str) -> usize {
+    input
+        .lines()
+        .fold(0, |tally, line| tally + line_difference_new_code(line))
+}
+
+fn line_difference_new_code(line: &str) -> usize {
+    let mut difference = 2; // 2 "
+
+    for c in line.chars() {
+        difference += match c {
+            '\\' | '"' => 1,
+            _ => 0,
+        }
+    }
+
+    difference
+}
+
 #[test]
 fn examples() {
     let input = "\"\"
@@ -50,4 +73,7 @@ fn examples() {
 \"\\x27\"";
     assert_eq!(difference_code_ram(input), 12);
     assert_eq!(line_difference_code_ram("\"\\\\\""), 3);
+
+    assert_eq!(difference_new_code(input), 19);
+    assert_eq!(line_difference_new_code("\"\\\\\""), 6);
 }
