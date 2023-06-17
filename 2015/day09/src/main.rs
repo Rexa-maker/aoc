@@ -5,10 +5,15 @@ use std::collections::HashMap;
 
 fn main() {
     let input = include_str!("input");
-    println!("{}", shortest_distance(input));
+    println!("{} {}", shortest_distance(input), longest_distance(input));
 }
 
-fn tsp(graph: &HashMap<(&str, &str), usize>) -> usize {
+enum WantedSolution {
+    Longest,
+    Shortest,
+}
+
+fn tsp(graph: &HashMap<(&str, &str), usize>, wanted_solution: WantedSolution) -> usize {
     let mut cities: Vec<&str> = graph
         .keys()
         .map(|(a, b)| vec![*a, *b])
@@ -17,7 +22,10 @@ fn tsp(graph: &HashMap<(&str, &str), usize>) -> usize {
     cities.sort();
     cities.dedup();
 
-    let mut shortest = usize::MAX;
+    let mut best_distance = match wanted_solution {
+        WantedSolution::Longest => 0,
+        WantedSolution::Shortest => usize::max_value(),
+    };
 
     'try_permutation: for permutation in permutohedron::Heap::new(&mut cities) {
         let mut distance = 0;
@@ -37,10 +45,13 @@ fn tsp(graph: &HashMap<(&str, &str), usize>) -> usize {
             src = *dst;
         }
 
-        shortest = distance.min(shortest);
+        best_distance = match wanted_solution {
+            WantedSolution::Longest => usize::max(best_distance, distance),
+            WantedSolution::Shortest => usize::min(best_distance, distance),
+        };
     }
 
-    shortest
+    best_distance
 }
 
 fn parse_input(input: &str) -> HashMap<(&str, &str), usize> {
@@ -70,7 +81,13 @@ fn parse_input(input: &str) -> HashMap<(&str, &str), usize> {
 fn shortest_distance(input: &str) -> usize {
     let graph = parse_input(input);
 
-    tsp(&graph)
+    tsp(&graph, WantedSolution::Shortest)
+}
+
+fn longest_distance(input: &str) -> usize {
+    let graph = parse_input(input);
+
+    tsp(&graph, WantedSolution::Longest)
 }
 
 #[test]
@@ -79,4 +96,5 @@ fn examples() {
 London to Belfast = 518
 Dublin to Belfast = 141";
     assert_eq!(shortest_distance(input), 605);
+    assert_eq!(longest_distance(input), 982);
 }
