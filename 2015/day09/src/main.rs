@@ -7,29 +7,29 @@ fn main() {
     println!("{}", shortest_distance(input));
 }
 
-// ChatGPT
-fn tsp(graph: &HashMap<(&str, &str), usize>, current: &str, visited: &Vec<&str>) -> usize {
-    // Base case: all locations have been visited
-    if visited.len() == graph.len() {
-        return 0;
-    }
-
-    // Recursive case: find the shortest path from the current location
+fn tsp(graph: &HashMap<(&str, &str), usize>, start: &str) -> usize {
+    let mut stack: Vec<(&str, Vec<&str>, usize)> = Vec::new();
     let mut shortest = std::usize::MAX;
-    for ((a, b), distance) in graph
-        .iter()
-        .filter(|((a, b), _)| *a == current || *b == current)
-    {
-        let next = if *a == current { *b } else { *a };
-        if visited.contains(&next) {
-            continue;
-        }
 
-        let mut new_visited = visited.clone();
-        new_visited.push(next);
-        let path_len = distance + tsp(graph, next, &new_visited);
-        if path_len < shortest {
-            shortest = path_len;
+    stack.push((start, vec![start], 0));
+
+    while let Some((current, visited, distance)) = stack.pop() {
+        if visited.len() == graph.len() {
+            shortest = shortest.min(distance);
+        } else {
+            for ((a, b), path_len) in graph
+                .iter()
+                .filter(|((a, b), _)| *a == current || *b == current)
+            {
+                let next = if *a == current { *b } else { *a };
+                if visited.contains(&next) {
+                    continue;
+                }
+
+                let mut new_visited = visited.clone();
+                new_visited.push(next);
+                stack.push((next, new_visited, distance + path_len));
+            }
         }
     }
 
@@ -63,8 +63,7 @@ fn shortest_distance(input: &str) -> usize {
     let mut shortest = usize::MAX;
 
     for city in cities {
-        let visited = vec![city];
-        let trip = tsp(&graph, &city, &visited);
+        let trip = tsp(&graph, &city);
         if trip < shortest {
             shortest = trip;
         }
