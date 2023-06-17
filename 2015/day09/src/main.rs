@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 fn main() {
     let input = include_str!("input");
@@ -15,35 +15,36 @@ fn tsp(graph: &HashMap<(&str, &str), usize>, start: &str) -> usize {
 
     while let Some((current, visited, distance)) = stack.pop() {
         if visited.len() == graph.len() {
+            println!("{} vs {}", distance, shortest);
             shortest = shortest.min(distance);
-        } else {
-            for ((a, b), path_len) in graph
-                .iter()
-                .filter(|((a, b), _)| *a == current || *b == current)
-            {
-                let next = if *a == current { *b } else { *a };
-                if visited.contains(&next) {
-                    continue;
-                }
+            continue;
+        }
 
-                let mut new_visited = visited.clone();
-                new_visited.push(next);
-                stack.push((next, new_visited, distance + path_len));
+        for ((a, b), path_len) in graph
+            .iter()
+            .filter(|((a, b), _)| *a == current || *b == current)
+        {
+            let next = if *a == current { *b } else { *a };
+            if visited.contains(&next) {
+                continue;
             }
+
+            let mut new_visited = visited.clone();
+            new_visited.push(next);
+            stack.push((next, new_visited, distance + path_len));
         }
     }
 
     shortest
 }
 
-fn shortest_distance(input: &str) -> usize {
+fn parse_input(input: &str) -> HashMap<(&str, &str), usize> {
     lazy_static! {
         static ref RE: Regex =
             Regex::new(r"(?P<source>\w+) to (?P<destination>\w+) = (?P<distance>\d+)").unwrap();
     }
 
     let mut graph: HashMap<(&str, &str), usize> = HashMap::new();
-    let mut cities: HashSet<&str> = HashSet::new();
 
     for capture in RE.captures_iter(input) {
         let src = capture.name("source").unwrap().as_str();
@@ -55,18 +56,18 @@ fn shortest_distance(input: &str) -> usize {
             .parse::<usize>()
             .unwrap();
 
-        cities.insert(&src);
-        cities.insert(&dst);
         graph.insert((&src, &dst), distance);
     }
 
+    graph
+}
+
+fn shortest_distance(input: &str) -> usize {
+    let graph = parse_input(input);
     let mut shortest = usize::MAX;
 
-    for city in cities {
-        let trip = tsp(&graph, &city);
-        if trip < shortest {
-            shortest = trip;
-        }
+    for starting_city in graph.keys().map(|(a, _)| a) {
+        shortest = tsp(&graph, &starting_city).min(shortest);
     }
 
     shortest
