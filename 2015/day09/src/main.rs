@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use permutohedron;
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -7,32 +8,36 @@ fn main() {
     println!("{}", shortest_distance(input));
 }
 
-fn tsp(graph: &HashMap<(&str, &str), usize>, start: &str) -> usize {
-    let mut stack: Vec<(&str, Vec<&str>, usize)> = Vec::new();
-    let mut shortest = std::usize::MAX;
+fn tsp(graph: &HashMap<(&str, &str), usize>) -> usize {
+    let mut cities: Vec<&str> = graph
+        .keys()
+        .map(|(a, b)| vec![*a, *b])
+        .flatten()
+        .collect::<Vec<&str>>();
+    cities.sort();
+    cities.dedup();
 
-    stack.push((start, vec![start], 0));
+    let mut shortest = usize::MAX;
 
-    while let Some((current, visited, distance)) = stack.pop() {
-        if visited.len() == graph.len() {
-            println!("{} vs {}", distance, shortest);
-            shortest = shortest.min(distance);
-            continue;
-        }
+    'try_permutation: for permutation in permutohedron::Heap::new(&mut cities) {
+        let mut distance = 0;
+        let mut src = permutation[0];
 
-        for ((a, b), path_len) in graph
-            .iter()
-            .filter(|((a, b), _)| *a == current || *b == current)
-        {
-            let next = if *a == current { *b } else { *a };
-            if visited.contains(&next) {
-                continue;
+        for dst in permutation.iter().skip(1) {
+            let key1 = &(src, *dst);
+            let key2 = &(*dst, src);
+            if graph.contains_key(key1) {
+                distance += graph.get(key1).unwrap();
+            } else if graph.contains_key(key2) {
+                distance += graph.get(key2).unwrap();
+            } else {
+                // This permutation is invalid, try the next one
+                continue 'try_permutation;
             }
-
-            let mut new_visited = visited.clone();
-            new_visited.push(next);
-            stack.push((next, new_visited, distance + path_len));
+            src = *dst;
         }
+
+        shortest = distance.min(shortest);
     }
 
     shortest
@@ -64,13 +69,8 @@ fn parse_input(input: &str) -> HashMap<(&str, &str), usize> {
 
 fn shortest_distance(input: &str) -> usize {
     let graph = parse_input(input);
-    let mut shortest = usize::MAX;
 
-    for starting_city in graph.keys().map(|(a, _)| a) {
-        shortest = tsp(&graph, &starting_city).min(shortest);
-    }
-
-    shortest
+    tsp(&graph)
 }
 
 #[test]
