@@ -1,6 +1,8 @@
 fn main() {
     static INPUT: &str = "vzbxkghb";
-    println!("{}", next_password(INPUT));
+    let next = next_password(INPUT);
+    let nextnext = next_password(&next);
+    println!("{} {}", next, nextnext);
 }
 
 fn next_password(password: &str) -> String {
@@ -20,23 +22,25 @@ fn is_valid(password: &str) -> bool {
     let mut last_pair = None;
 
     for (i, c) in password.chars().enumerate() {
+        // Check for invalid characters
         if c == 'i' || c == 'o' || c == 'l' {
             return false;
         }
-        if i > 1 {
-            if c as u8 == password.as_bytes()[i - 1] + 1
-                && c as u8 == password.as_bytes()[i - 2] + 2
-            {
-                has_straight = true;
-            }
+
+        // Check for a straight
+        if i > 1
+            && c as u8 == password.as_bytes()[i - 1] + 1
+            && c as u8 == password.as_bytes()[i - 2] + 2
+        {
+            has_straight = true;
         }
-        if i > 0 {
-            if c == password.as_bytes()[i - 1] as char {
-                if last_pair.is_none() {
-                    last_pair = Some(c);
-                } else if last_pair.unwrap() != c {
-                    has_two_pairs = true;
-                }
+
+        // Check for two pairs
+        if i > 0 && c == password.as_bytes()[i - 1] as char {
+            if last_pair.is_none() {
+                last_pair = Some(c);
+            } else if last_pair.unwrap() != c {
+                has_two_pairs = true;
             }
         }
     }
@@ -46,25 +50,22 @@ fn is_valid(password: &str) -> bool {
 
 fn increment(password: &str) -> String {
     let mut password = password.to_string();
-    let mut i = password.len() - 1;
 
-    loop {
+    for i in (0..password.len()).rev() {
         let mut c = password.as_bytes()[i];
+
+        // First, increment the character
         if c == 'z' as u8 {
             c = 'a' as u8;
         } else {
             c += 1;
         }
-        password.replace_range(i..=i, &c.to_string());
+        password.replace_range(i..=i, &(c as char).to_string());
 
+        // Then, check if we need to increment the next character
         if c != 'a' as u8 {
             break;
         }
-        if i == 0 {
-            break;
-        }
-
-        i -= 1;
     }
 
     password
