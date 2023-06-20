@@ -37,7 +37,7 @@ fn max_happiness(input: &str, add_myself: bool) -> i32 {
             happiness_map.insert((person, "MOI"), 0);
             happiness_map.insert(("MOI", person), 0);
         }
-        people.insert("MOI");
+        people.push("MOI");
     }
 
     let mut max_happiness = 0;
