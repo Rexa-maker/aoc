@@ -1,6 +1,10 @@
 fn main() {
     static INPUT: &str = include_str!("input");
-    println!("{}", total_score(INPUT, 100));
+    println!(
+        "{} {}",
+        total_score(INPUT, 100),
+        total_score_for_calory(INPUT, 100, 500)
+    );
 }
 
 #[derive(Copy, Clone)]
@@ -9,19 +13,19 @@ enum Feature {
     Durability,
     Flavor,
     Texture,
-    // Calories,
     COUNT,
 }
 
 impl Feature {
     fn iter() -> impl Iterator<Item = usize> {
-        0..Feature::COUNT as usize
+        0..Feature::COUNT as usize // Ignore calories
     }
 }
 
 #[derive(Debug, Copy, Clone)]
 struct Ingredient {
-    features: [i32; Feature::COUNT as usize],
+    features: [i64; Feature::COUNT as usize],
+    calories: i64,
 }
 
 impl Ingredient {
@@ -33,12 +37,15 @@ impl Ingredient {
             let mut features = [0; Feature::COUNT as usize];
             let line = line.replace(",", "");
             let mut words = line.split_whitespace();
-            features[Feature::Capacity as usize] = words.nth(2).unwrap().parse::<i32>().unwrap();
-            features[Feature::Durability as usize] = words.nth(1).unwrap().parse::<i32>().unwrap();
-            features[Feature::Flavor as usize] = words.nth(1).unwrap().parse::<i32>().unwrap();
-            features[Feature::Texture as usize] = words.nth(1).unwrap().parse::<i32>().unwrap();
-            // let calories = words.nth(1).unwrap().parse::<i32>().unwrap();
-            ingredients.push(Ingredient { features: features });
+            features[Feature::Capacity as usize] = words.nth(2).unwrap().parse::<i64>().unwrap();
+            features[Feature::Durability as usize] = words.nth(1).unwrap().parse::<i64>().unwrap();
+            features[Feature::Flavor as usize] = words.nth(1).unwrap().parse::<i64>().unwrap();
+            features[Feature::Texture as usize] = words.nth(1).unwrap().parse::<i64>().unwrap();
+            let calories = words.nth(1).unwrap().parse::<i64>().unwrap();
+            ingredients.push(Ingredient {
+                features: features,
+                calories: calories,
+            });
         }
 
         ingredients
@@ -46,18 +53,18 @@ impl Ingredient {
 }
 
 struct IngredientCombination {
-    ingredients: Vec<(i32, Ingredient)>,
+    ingredients: Vec<(i64, Ingredient)>,
 }
 
 impl IngredientCombination {
-    fn score(&self) -> i32 {
+    fn score(&self) -> i64 {
         let mut features = [0; Feature::COUNT as usize];
         for (teaspoons, ingredient) in self.ingredients.iter() {
             for feature in Feature::iter() {
                 features[feature] += ingredient.features[feature] * teaspoons;
             }
         }
-        if features.iter().any(|&feature| feature < 0) {
+        if features.iter().any(|&feature| feature <= 0) {
             return 0;
         }
 
@@ -105,7 +112,7 @@ impl IngredientCombination {
             .collect::<Vec<Vec<u32>>>()
     }
 
-    fn find_max_combination(teaspoons: u32, ingredients: Vec<Ingredient>) -> i32 {
+    fn find_max_combination(teaspoons: u32, ingredients: Vec<Ingredient>) -> i64 {
         let mut max_score = 0;
 
         for u32_combination in
@@ -113,7 +120,7 @@ impl IngredientCombination {
         {
             let mut combination = Vec::new();
             for (teaspoons, ingredient) in u32_combination.iter().zip(ingredients.iter()) {
-                combination.push((*teaspoons as i32, *ingredient));
+                combination.push((*teaspoons as i64, *ingredient));
             }
             max_score = max_score.max(
                 IngredientCombination {
@@ -127,9 +134,37 @@ impl IngredientCombination {
     }
 }
 
-fn total_score(input: &str, teaspoons: u32) -> i32 {
+fn total_score(input: &str, teaspoons: u32) -> i64 {
     let ingredients = Ingredient::parse_input(input);
     IngredientCombination::find_max_combination(teaspoons, ingredients)
+}
+
+fn total_score_for_calory(input: &str, teaspoons: u32, calories: i64) -> i64 {
+    let ingredients = Ingredient::parse_input(input);
+    let mut max_score = 0;
+
+    for u32_combination in
+        IngredientCombination::teaspoons_to_combinations(teaspoons, ingredients.len() as u32)
+    {
+        let mut combination = Vec::new();
+        for (teaspoons, ingredient) in u32_combination.iter().zip(ingredients.iter()) {
+            combination.push((*teaspoons as i64, *ingredient));
+        }
+        let ingredient_combination = IngredientCombination {
+            ingredients: combination,
+        };
+        if ingredient_combination
+            .ingredients
+            .iter()
+            .map(|(teaspoons, ingredient)| teaspoons * ingredient.calories)
+            .sum::<i64>()
+            == calories
+        {
+            max_score = max_score.max(ingredient_combination.score());
+        }
+    }
+
+    max_score
 }
 
 #[test]
@@ -144,4 +179,5 @@ fn examples() {
     let input = "Butterscotch: capacity -1, durability -2, flavor 6, texture 3, calories 8
                  Cinnamon: capacity 2, durability 3, flavor -2, texture -1, calories 3";
     assert_eq!(total_score(input, 100), 62842880);
+    assert_eq!(total_score_for_calory(input, 100, 500), 57600000);
 }
