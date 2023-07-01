@@ -85,7 +85,50 @@ fn which_sue(input: &str) -> u16 {
     0
 }
 
+fn which_real_sue(input: &str) -> u16 {
+    let message = message();
+    let mut sues = Vec::new();
+
+    for line in input.lines() {
+        sues.push(Sue::parse(line));
+    }
+
+    for sue in sues {
+        let mut valid = true;
+        for (&coumpound, value) in message.coumpounds.iter() {
+            if let Some(sue_value) = sue.coumpounds.get(coumpound) {
+                match coumpound {
+                    "cats" | "trees" => {
+                        if *value >= *sue_value {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    "pomeranians" | "goldfish" => {
+                        if *value <= *sue_value {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    _ => {
+                        if *value != *sue_value {
+                            valid = false;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if valid {
+            return sue.name;
+        }
+    }
+
+    0
+}
+
 fn main() {
     let input = include_str!("input");
-    println!("{}", which_sue(input));
+    println!("{} {}", which_sue(input), which_real_sue(input));
 }
