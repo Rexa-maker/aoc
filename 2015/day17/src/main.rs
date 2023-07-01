@@ -1,6 +1,10 @@
 fn main() {
     let input = include_str!("input");
-    println!("{}", how_many_combinations(input, 150));
+    println!(
+        "{} {}",
+        how_many_combinations(input, 150),
+        how_many_min_combinations(input, 150)
+    );
 }
 
 fn parse_input(input: &str) -> Vec<u32> {
@@ -48,6 +52,30 @@ fn how_many_combinations(input: &str, total: u32) -> usize {
     count
 }
 
+fn how_many_min_combinations(input: &str, total: u32) -> usize {
+    let containers = parse_input(input);
+    assert!(containers.len() <= 32);
+
+    let mut combinations = Combinations::new(containers);
+    let mut min_count = usize::MAX;
+    let mut min_count_count = 0;
+
+    while combinations.used_containers_mask < (1 << combinations.containers.len()) {
+        if combinations.can_fit_total(total) {
+            let count = combinations.used_containers_mask.count_ones() as usize;
+            if count < min_count {
+                min_count = count;
+                min_count_count = 1;
+            } else if count == min_count {
+                min_count_count += 1;
+            }
+        }
+        combinations.used_containers_mask += 1;
+    }
+
+    min_count_count
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,5 +88,6 @@ mod tests {
 5
 5";
         assert_eq!(how_many_combinations(input, 25), 4);
+        assert_eq!(how_many_min_combinations(input, 25), 3);
     }
 }
