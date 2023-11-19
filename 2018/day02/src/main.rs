@@ -4,6 +4,9 @@ fn main() {
     let input = include_str!("input.txt");
     let checksum = checksum(input);
     println!("Checksum: {checksum}");
+
+    let common = common_letters_in_prototype_boxes(input);
+    println!("Common letters: {common}");
 }
 
 fn has_pairs_n_triples(line: &str) -> (bool, bool) {
@@ -43,6 +46,30 @@ fn checksum(input: &str) -> u32 {
     pairs * triples
 }
 
+fn common_letters_in_prototype_boxes(input: &str) -> String {
+    let lines: Vec<&str> = input.lines().collect();
+    for i in 0..lines.len() {
+        'compare_with_loop: for j in i + 1..lines.len() {
+            let mut diff = 0;
+            let mut common = String::new();
+            for (c1, c2) in lines[i].chars().zip(lines[j].chars()) {
+                if c1 != c2 {
+                    diff += 1;
+                    if diff > 1 {
+                        continue 'compare_with_loop;
+                    }
+                } else {
+                    common.push(c1);
+                }
+            }
+            if diff == 1 {
+                return common;
+            }
+        }
+    }
+    panic!("No solution found");
+}
+
 #[test]
 fn examples() {
     assert_eq!(has_pairs_n_triples("abcdef"), (false, false));
@@ -56,5 +83,10 @@ fn examples() {
     assert_eq!(
         checksum("abcdef\nbababc\nabbcde\nabcccd\naabcdd\nabcdee\nababab"),
         12
+    );
+
+    assert_eq!(
+        common_letters_in_prototype_boxes("abcde\nfghij\nklmno\npqrst\nfguij\naxcye\nwvxyz"),
+        "fgij"
     );
 }
